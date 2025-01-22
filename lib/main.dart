@@ -18,10 +18,14 @@ Future<void> main() async {
 
   await SharedPrefs.init();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  await FirebaseApi().initNotifications();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    await FirebaseApi().initNotifications();
+  } catch (e) {
+    print('Firebase already initialized: $e');
+  }
 
   AwesomeNotifications().initialize(
     null,

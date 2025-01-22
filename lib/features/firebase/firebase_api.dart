@@ -57,41 +57,59 @@ class FirebaseApi {
   }
 
   Future<void> initPushNotification() async {
+    // Handle when the app is opened from a terminated state
     FirebaseMessaging.instance.getInitialMessage().then(handelMessage);
 
+    // Handle when the app is opened from the background
     FirebaseMessaging.onMessageOpenedApp.listen(handelMessage);
 
-
-    /*FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      if (kDebugMode) {
-        print("App opened from notification: ${message.data}");
-      }
-    });*/
-
-    /// this is to get the message when the App is Opened
+    // Handle messages when the app is in the foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (kDebugMode) {
-        print(
-            'Message received in the foreground: ${message.notification?.body}');
-
-        /// this is to get the chanel key for validation.
-        print('Message received in the foregroundd: ${message.data}');
+        print('Message received in the foreground: ${message.notification?.body}');
+        print('Message data: ${message.data}');
       }
+
       String channel = "";
       Map<String, dynamic> data = message.data;
 
       String channelKey = data['channelKey'] ?? "0";
       channel = channelKey == "1" ? "device_chanel" : "basic_chanel";
 
-
       createNotification(
-          channelKey: channel,
-          title: "${message.notification?.title}",
-          body: "${message.notification?.body}",
-          time: generateUniqueId());
-
-      //createNotification(channelKey: "device_chanel", title: "${message.notification?.title}", body: "Device Alert : ${message.notification?.body}");
+        channelKey: channel,
+        title: "${message.notification?.title}",
+        body: "${message.notification?.body}",
+        time: generateUniqueId(),
+      );
     });
+
+    // Request notification permissions (required for iOS)
+    NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print('User granted permission');
+    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+      print('User granted provisional permission');
+    } else {
+      print('User declined or has not granted permission');
+    }
+
+    // Retrieve the APNs token for iOS
+    String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+    if (kDebugMode) {
+      print('APNs Token: $apnsToken');
+    }
+
+    // Retrieve the FCM token
+    String? fcmToken = await FirebaseMessaging.instance.getToken();
+    if (kDebugMode) {
+      print('FCM Token: $fcmToken');
+    }
   }
 
   int generateUniqueId() {
